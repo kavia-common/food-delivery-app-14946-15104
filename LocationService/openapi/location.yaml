@@ -1,0 +1,72 @@
+openapi: 3.0.3
+info:
+  title: Location Service API
+  version: 1.0.0
+  description: Provides live location updates and tracking for delivery orders.
+
+servers:
+  - url: http://localhost:8107
+    description: Local
+  - url: https://location.foodly.example.com
+    description: Production
+
+tags:
+  - name: Location
+
+paths:
+  /location/updates:
+    post:
+      tags: [Location]
+      summary: Submit live location update from courier app
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LocationUpdate' }
+      responses:
+        '202':
+          description: Accepted
+  /location/track/{orderId}:
+    get:
+      tags: [Location]
+      summary: Get latest location and ETA for an order
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Latest snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LocationSnapshot' }
+        '404': { description: Not found }
+
+components:
+  schemas:
+    GeoPoint:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat: { type: number, format: double }
+        lng: { type: number, format: double }
+
+    LocationUpdate:
+      type: object
+      required: [orderId, courierId, position, timestamp]
+      properties:
+        orderId: { type: string }
+        courierId: { type: string }
+        position: { $ref: '#/components/schemas/GeoPoint' }
+        bearing: { type: number, format: float }
+        speedMps: { type: number, format: float }
+        timestamp: { type: string, format: date-time }
+
+    LocationSnapshot:
+      type: object
+      required: [position, timestamp]
+      properties:
+        position: { $ref: '#/components/schemas/GeoPoint' }
+        timestamp: { type: string, format: date-time }
+        etaMinutes: { type: integer }
